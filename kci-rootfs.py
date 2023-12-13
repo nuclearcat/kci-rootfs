@@ -35,9 +35,6 @@ def get_containerid():
     """
     Generate short UUID as hash of current directory
     """
-    global UUID
-    if UUID != "":
-        return UUID
     # get current directory
     cwd = os.getcwd()
     print("Current directory: "+cwd)
@@ -177,8 +174,7 @@ def rootfs_config(rootfs_name):
             return y["rootfs_configs"][rootfs_name]
 
 
-def build_image(name, arch, rootfs_type):
-    container_name = "kernelci-build-" + UUID
+def build_image(name, arch, rootfs_type, container_name):
     client = docker.from_env()
 
     print(f"Building kernelci rootfs {name} for {arch} type {rootfs_type}")
@@ -260,9 +256,9 @@ def main():
     if "," in args.arch:
         archs = args.arch.split(",")
         for arch in archs:
-            build_image(args.name, arch, rootfs_type)
+            build_image(args.name, arch, rootfs_type, containerid)
     else:
-        build_image(args.name, args.arch, rootfs_type)
+        build_image(args.name, args.arch, rootfs_type, containerid)
 
     # stop and remove container
     cleanup_container(containerid)
