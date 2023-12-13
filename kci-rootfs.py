@@ -87,6 +87,10 @@ def prepare_kci_source(branch):
 
 # TODO/FIX: This is not working well, might break even running build
 def prepare_docker_container(imagename, container_name):
+    # workaround, debos need to create fakemachine scratch volume file
+    # under uid 1000, so we need to set kernelci-core writable by uid 1000
+    # TODO(nuclearcat): chdir to temp dir?
+    os.system("chown -R 1000:1000 kernelci-core")
     # is kernelci-build-cross container present and running?
     # if yes, stop and remove it to refresh
     client = docker.from_env()
@@ -226,7 +230,7 @@ def cleanup_container(container_name):
 
 def main():
     global containerid
-    # add signal handler for INT/TERM
+    # add signal handler for INT/TERM to not leave dangling containers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
