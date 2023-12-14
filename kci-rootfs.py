@@ -121,6 +121,7 @@ def prepare_docker_container(imagename, container_name):
             detach=True,
             init=True,
             tty=True,
+            user="0:0",
             volumes={
                 os.getcwd()+ "/kernelci-core": {
                     "bind": "/kernelci-core",
