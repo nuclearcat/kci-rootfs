@@ -224,6 +224,14 @@ def cleanup_container(container_name):
 
     client.containers.get(container_name).remove(force=True)
 
+def get_all_rootfs():
+    """
+    Return list of all rootfs names
+    """
+    with open("kernelci-core/config/core/rootfs-configs.yaml", "r") as f:
+        y = yaml.load(f, Loader=yaml.FullLoader)
+    return y["rootfs_configs"]
+
 
 def main():
     global containerid
@@ -232,21 +240,40 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
 
     parser = argparse.ArgumentParser(description='Build rootfs images for KernelCI v'+VERSION)
-    parser.add_argument('--arch', help='Architecture to build for, e.g. arm64,arm,amd64', required=True)
-    parser.add_argument('--name', help='Name of the rootfs to build', required=True)
-    parser.add_argument('--branch', help='Branch of kernelci-core to use', default="main")    
+    parser.add_argument('--arch', help='Architecture to build for, e.g. arm64,arm,amd64')
+    parser.add_argument('--name', help='Name of the rootfs to build')
+    parser.add_argument('--branch', help='Branch of kernelci-core to use', default="main")
+    parser.add_argument('--all', help='Build all rootfs images', action='store_true')
     args = parser.parse_args()
 
     containerid = get_containerid()
     verify_docker()
     prepare_kci_source(args.branch)
+
+    if args.all:
+        # iterate key,value
+        allfs = get_all_rootfs()
+        for rootfs in allfs:
+            arch_list = allfs[rootfs]["arch_list"]
+            rootfs_type = allfs[rootfs]["rootfs_type"]
+            for arch in arch_list:
+                print(f"Building {rootfs} for {arch} type {rootfs_type}")
+                build_image(rootfs, arch, rootfs_type, containerid)
+        # stop and remove container
+        cleanup_container(containerid)
+        exit(0)
+
+    # otherwise arch and name are required
+    if args.arch is None or args.name is None:
+        print("Please specify --arch and --name")
+        exit(1)
+
     fs_config = rootfs_config(args.name)
     try:
         rootfs_type = fs_config["rootfs_type"]
     except KeyError:
         print("rootfs_type not found in config")
         exit(1)
-
 
     prefix = ""
     # TODO: staging- cros-
