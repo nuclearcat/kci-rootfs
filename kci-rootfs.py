@@ -256,11 +256,15 @@ def main():
         for rootfs in allfs:
             arch_list = allfs[rootfs]["arch_list"]
             rootfs_type = allfs[rootfs]["rootfs_type"]
+            prefix = ""
+            # TODO: staging- cros-
+            docker_image = f"kernelci/{prefix}{rootfs_type}:kernelci"
+            prepare_docker_container(docker_image, containerid)
             for arch in arch_list:
                 print(f"Building {rootfs} for {arch} type {rootfs_type}")
                 build_image(rootfs, arch, rootfs_type, containerid)
-        # stop and remove container
-        cleanup_container(containerid)
+            # stop and remove container
+            cleanup_container(containerid)
         exit(0)
 
     # otherwise arch and name are required
